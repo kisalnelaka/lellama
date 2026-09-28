@@ -3,8 +3,9 @@
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.110+-009688.svg?logo=fastapi)](https://fastapi.tiangolo.com)
 [![PostGIS](https://img.shields.io/badge/PostGIS-16--3.4-336791.svg?logo=postgresql)](https://postgis.net)
-[![Redis](https://img.shields.io/badge/Redis-7.2-DC382D.svg?logo=redis)](https://redis.io)
-[![Tests](https://img.shields.io/badge/Pytest-24%20Passed-brightgreen.svg)]()
+[![Flutter](https://img.shields.io/badge/Flutter-3.47+-02569B.svg?logo=flutter)](https://flutter.dev)
+[![Pytest](https://img.shields.io/badge/Backend%20Pytest-24%20Passed-brightgreen.svg)]()
+[![Flutter Test](https://img.shields.io/badge/Mobile%20Tests-2%20Passed-brightgreen.svg)]()
 
 > **Mission-critical, offline-first marine intelligence and safety platform engineered for Sri Lankan artisanal and multiday offshore fishermen.**
 
@@ -119,7 +120,28 @@ cp .env.example .env
 pytest -v
 ```
 
-### Docker Compose Deployment
+### Mobile Client (Flutter Application)
+
+The mobile client is engineered for extreme tropical maritime conditions, low-connectivity offline caching, and high-glare sunlight visibility:
+
+```bash
+# 1. Navigate to mobile directory
+cd mobile
+
+# 2. Fetch packages
+flutter pub get
+
+# 3. Execute mobile test suite (unit + widget)
+flutter test
+
+# 4. Run static analysis
+flutter analyze
+
+# 5. Launch application on target device / emulator
+flutter run
+```
+
+### Docker Compose Full Stack Deployment
 
 ```bash
 # Launch PostGIS, Redis, FastAPI Backend, and Celery pipelines
@@ -134,10 +156,11 @@ open http://localhost:8000/api/v1/docs
 
 ---
 
-## 6. Phase 1 Verification Results
+## 6. Verification & Quality Assurance
 
-The automated test suite verifies API security, data isolation, rate limiting, and bundle generation:
+Both the backend distributed pipeline and the mobile Flutter client maintain 100% test passing rates with strict linting:
 
+### Backend Test Suite (Pytest: 24 Passed)
 ```
 tests/test_alert_engine.py::test_onshore_vessel_receives_push_notification PASSED [  4%]
 tests/test_alert_engine.py::test_offshore_offline_vessel_escalates_to_sms_fallback PASSED [  8%]
@@ -164,7 +187,18 @@ tests/test_vessels.py::test_ping_vessel_offshore_location PASSED         [ 91%]
 tests/test_weather_providers.py::test_weather_service_automated_failover PASSED [ 95%]
 tests/test_weather_providers.py::test_weather_service_raises_when_all_providers_fail PASSED [100%]
 
-======================= 24 passed, 4 warnings in 23.33s ========================
+======================= 24 passed, 4 warnings in 48.83s ========================
+```
+
+### Mobile Test Suite (Flutter: 2 Passed, 0 Analyzer Issues)
+```
+00:00 +0: Great-circle navigation distance and bearing calculation
+00:00 +1: Lellama Marine App renders daylight UI and language controls
+00:01 +2: All tests passed!
+
+$ flutter analyze
+Analyzing mobile...
+No issues found! (ran in 1.2s)
 ```
 
 ---
