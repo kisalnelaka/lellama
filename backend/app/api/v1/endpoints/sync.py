@@ -204,11 +204,12 @@ def download_offline_sync_bundle(
     return OfflineSyncPackageResponse(
         sync_timestamp=now,
         package_version="v1.0-maritime",
-        user_id=current_user.id,
+        user_id=current_user.id if current_user else None,
         vessel_id=vessel.id if vessel else None,
-        language_preference=current_user.language_preference,
+        language_preference=current_user.language_preference if current_user else "si",
         pfz_collection=geojson_collection,
         weather_forecasts=weather_series_list,
         active_alerts=active_alerts,
         offline_tile_manifest=tile_manifest,
     )
+

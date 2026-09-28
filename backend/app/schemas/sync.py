@@ -17,9 +17,9 @@ class OfflineSyncPackageResponse(BaseModel):
 
     sync_timestamp: datetime
     package_version: str
-    user_id: str
+    user_id: Optional[str] = None
     vessel_id: Optional[str] = None
-    language_preference: str
+    language_preference: str = "si"
 
     # GeoJSON of today's Potential Fishing Zones
     pfz_collection: PFZGeoJSONFeatureCollection
