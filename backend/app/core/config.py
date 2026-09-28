@@ -78,11 +78,12 @@ class Settings(BaseSettings):
     def get_database_url(self) -> str:
         """Construct or return the active SQLAlchemy database URL."""
         if self.DATABASE_URL:
-            return self.DATABASE_URL
+            return self.DATABASE_URL.strip("\"'")
         return (
             f"postgresql+psycopg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}"
             f"@{self.POSTGRES_SERVER}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
         )
+
 
 
 settings = Settings()

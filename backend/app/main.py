@@ -58,6 +58,7 @@ app.add_middleware(
 
 
 @app.get("/health", tags=["System"])
+@app.get(f"{settings.API_V1_STR}/health", tags=["System"])
 def health_check():
     """Liveness probe reporting backend availability."""
     return {
@@ -65,10 +66,13 @@ def health_check():
         "service": "Lellama Marine API",
         "version": settings.VERSION,
         "environment": settings.ENVIRONMENT,
+        "coverage_zone": "Sri Lanka EEZ (EPSG:4326)",
     }
 
 
+
 @app.get("/ready", tags=["System"])
+@app.get(f"{settings.API_V1_STR}/ready", tags=["System"])
 def readiness_check():
     """Readiness probe checking database and core connectivity."""
     try:
