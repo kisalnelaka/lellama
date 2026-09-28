@@ -1,7 +1,7 @@
 """Celery pipelines for daily satellite remote sensing and marine weather ingestion."""
 
 from datetime import date, datetime, timezone
-from typing import List, Tuple, Dict, Any
+from typing import List, Tuple, Dict, Any, Optional
 import logging
 from sqlalchemy.orm import Session
 
