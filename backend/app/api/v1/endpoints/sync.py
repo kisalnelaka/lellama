@@ -8,12 +8,13 @@ from sqlalchemy.orm import Session
 from app.core.config import settings
 from app.core.database import get_db
 from app.core.limiter import limiter
-from app.core.security import get_current_user
+from app.core.security import get_optional_current_user
 from app.models.user import User
 from app.models.vessel import Vessel
 from app.models.pfz import PFZCoordinate
 from app.models.weather import WeatherCache
 from app.models.alert import AlertLog
+from app.services.weather_provider import MarineWeatherService
 from app.schemas.sync import OfflineSyncPackageResponse
 from app.schemas.pfz import (
     PFZGeoJSONFeatureCollection,
@@ -36,9 +37,10 @@ router = APIRouter(prefix="/sync", tags=["Offline Marine Sync"])
 def download_offline_sync_bundle(
     request: Request,
     vessel_id: Optional[str] = None,
-    current_user: User = Depends(get_current_user),
+    current_user: Optional[User] = Depends(get_optional_current_user),
     db: Session = Depends(get_db),
 ):
+
     """Serve complete 24-48h offshore operational data package to mobile client.
 
     Executes when the fisherman has Wi-Fi / 4G onshore prior to early morning departure.
@@ -99,11 +101,11 @@ def download_offline_sync_bundle(
     # 2. Identify locations needing 24-hour weather forecast series
     weather_series_list: List[WeatherForecastSeries] = []
 
-    # Get target vessel or primary vessel
+    # Get target vessel or primary vessel if authenticated
     vessel = None
     if vessel_id:
         vessel = db.query(Vessel).filter(Vessel.id == vessel_id).first()
-    if not vessel:
+    elif current_user:
         vessel = (
             db.query(Vessel).filter(Vessel.user_id == current_user.id).first()
         )
@@ -126,24 +128,44 @@ def download_offline_sync_bundle(
                 )
             )
 
-    # Also include top 5 PFZ centroid coordinates
-    for lat, lon in pfz_points[:5]:
-        locations_to_query.append((lat, lon, f"PFZ ({lat:.2f}N, {lon:.2f}E)"))
+    # Always ensure primary departure ports exist if none assigned
+    if not locations_to_query:
+        locations_to_query.extend([
+            (5.9482, 80.4578, "Mirissa Fishery Harbour"),
+            (6.4789, 79.9827, "Beruwala Fishery Harbour"),
+            (6.0329, 80.2168, "Galle Fishery Harbour"),
+        ])
+
+    # Also include top 3 PFZ centroid coordinates
+    for lat, lon in pfz_points[:3]:
+        locations_to_query.append((lat, lon, f"PFZ Hotspot ({lat:.2f}°N, {lon:.2f}°E)"))
+
+    weather_svc = MarineWeatherService()
 
     for lat, lon, loc_name in locations_to_query:
         records = (
             db.query(WeatherCache)
             .filter(
-                WeatherCache.latitude.between(lat - 0.2, lat + 0.2),
-                WeatherCache.longitude.between(lon - 0.2, lon + 0.2),
+                WeatherCache.latitude.between(lat - 0.25, lat + 0.25),
+                WeatherCache.longitude.between(lon - 0.25, lon + 0.25),
                 WeatherCache.valid_for_time >= now,
             )
             .order_by(WeatherCache.valid_for_time.asc())
             .limit(24)
             .all()
         )
+
+        # If cache is not yet seeded, fetch on the fly
+        if not records:
+            try:
+                records = weather_svc.get_marine_forecast(
+                    lat, lon, location_name=loc_name, persist_db=db
+                )
+            except Exception:
+                records = []
+
         items = [WeatherResponse.model_validate(r) for r in records]
-        max_wave = max([f.wave_height for f in items]) if items else 0.0
+        max_wave = max([f.wave_height for f in items]) if items else 1.2
         weather_series_list.append(
             WeatherForecastSeries(
                 latitude=lat,
@@ -155,14 +177,13 @@ def download_offline_sync_bundle(
             )
         )
 
-    # 3. Fetch active alerts for current user
-    alert_records = (
-        db.query(AlertLog)
-        .filter(AlertLog.user_id == current_user.id)
-        .order_by(AlertLog.created_at.desc())
-        .limit(10)
-        .all()
-    )
+    # 3. Fetch active alerts
+    alert_query = db.query(AlertLog)
+    if current_user:
+        alert_query = alert_query.filter(
+            (AlertLog.user_id == current_user.id) | (AlertLog.user_id == None)
+        )
+    alert_records = alert_query.order_by(AlertLog.created_at.desc()).limit(10).all()
     active_alerts = [AlertLogResponse.model_validate(a) for a in alert_records]
 
     # 4. Offline Map Tile Manifest for Sri Lanka Exclusive Economic Zone (EEZ)

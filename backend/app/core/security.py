@@ -121,3 +121,28 @@ def get_current_user(
         )
 
     return user
+
+
+def get_optional_current_user(
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security_scheme),
+    db: Session = Depends(get_db),
+):
+    """Optional authentication dependency; returns None if anonymous/unauthenticated."""
+    if not credentials:
+        return None
+    try:
+        token = credentials.credentials
+        payload = decode_access_token(token)
+        user_id = payload.get("sub")
+        if not user_id:
+            return None
+        from app.models.user import User
+
+        return (
+            db.query(User)
+            .filter(User.id == user_id, User.is_active == True)
+            .first()
+        )
+    except Exception:
+        return None
+
