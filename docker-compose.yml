@@ -1,0 +1,90 @@
+services:
+  postgis:
+    image: postgis/postgis:16-3.4-alpine
+    container_name: lellama-postgis
+    restart: always
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-lellama_marine}
+      POSTGRES_USER: ${POSTGRES_USER:-lellama_admin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-secure_marine_password}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgis_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-lellama_admin} -d ${POSTGRES_DB:-lellama_marine}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7.2-alpine
+    container_name: lellama-redis
+    restart: always
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: lellama-api
+    restart: always
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 4
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql+psycopg://${POSTGRES_USER:-lellama_admin}:${POSTGRES_PASSWORD:-secure_marine_password}@postgis:5432/${POSTGRES_DB:-lellama_marine}
+      - REDIS_URL=redis://redis:6379/0
+      - SECRET_KEY=${SECRET_KEY:-insecure-dev-secret-key-change-in-production-marine-platform}
+      - ENVIRONMENT=production
+    depends_on:
+      postgis:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  celery_worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: lellama-celery-worker
+    restart: always
+    command: celery -A app.core.celery_app worker --loglevel=info -c 2
+    environment:
+      - DATABASE_URL=postgresql+psycopg://${POSTGRES_USER:-lellama_admin}:${POSTGRES_PASSWORD:-secure_marine_password}@postgis:5432/${POSTGRES_DB:-lellama_marine}
+      - REDIS_URL=redis://redis:6379/0
+      - SECRET_KEY=${SECRET_KEY:-insecure-dev-secret-key-change-in-production-marine-platform}
+    depends_on:
+      postgis:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  celery_beat:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: lellama-celery-beat
+    restart: always
+    command: celery -A app.core.celery_app beat --loglevel=info
+    environment:
+      - DATABASE_URL=postgresql+psycopg://${POSTGRES_USER:-lellama_admin}:${POSTGRES_PASSWORD:-secure_marine_password}@postgis:5432/${POSTGRES_DB:-lellama_marine}
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      postgis:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+volumes:
+  postgis_data:
+  redis_data:
