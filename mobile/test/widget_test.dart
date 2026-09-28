@@ -87,30 +87,25 @@ void main() {
     expect(find.text(MarineConfig.appTitle), findsOneWidget);
     expect(find.byIcon(Icons.sync_rounded), findsOneWidget);
 
-    // Verify Trilingual switch buttons
-    expect(find.text('සිංහල'), findsOneWidget);
-    expect(find.text('தமிழ்'), findsOneWidget);
-    expect(find.text('English'), findsOneWidget);
+    // Open language menu and select English
+    final langBtn = find.byType(PopupMenuButton<String>);
+    expect(langBtn, findsOneWidget);
+    await tester.tap(langBtn);
+    await tester.pumpAndSettle();
 
-    // Tap English language button
-    await tester.tap(find.text('English'));
+    expect(find.textContaining('English'), findsOneWidget);
+    await tester.tap(find.textContaining('English'));
     await tester.pumpAndSettle();
 
     expect(testProvider.selectedLanguage, equals('en'));
 
-    for (final element in find.byType(Text).evaluate()) {
-      final widget = element.widget as Text;
-      // ignore: avoid_print
-      print('RENDERED TEXT: ${widget.data}');
-    }
-
-    // Verify English localized tab labels appear
+    // Verify English localized navigation bar destinations appear
     expect(find.text('Map View'), findsOneWidget);
-    expect(find.text('Zone Directory'), findsOneWidget);
-    expect(find.text('Marine Weather'), findsOneWidget);
+    expect(find.text('PFZ Zones'), findsOneWidget);
+    expect(find.text('Weather'), findsOneWidget);
 
-    // Tap Zone Directory tab
-    await tester.tap(find.text('Zone Directory'));
+    // Tap PFZ Zones tab
+    await tester.tap(find.text('PFZ Zones'));
     await tester.pumpAndSettle();
 
     // Verify Potential Fishing Zone cards render
@@ -118,3 +113,4 @@ void main() {
     expect(find.textContaining('Confidence'), findsWidgets);
   });
 }
+
