@@ -4,7 +4,7 @@
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.110+-009688.svg?logo=fastapi)](https://fastapi.tiangolo.com)
 [![PostGIS](https://img.shields.io/badge/PostGIS-16--3.4-336791.svg?logo=postgresql)](https://postgis.net)
 [![Redis](https://img.shields.io/badge/Redis-7.2-DC382D.svg?logo=redis)](https://redis.io)
-[![Tests](https://img.shields.io/badge/Pytest-14%20Passed-brightgreen.svg)]()
+[![Tests](https://img.shields.io/badge/Pytest-24%20Passed-brightgreen.svg)]()
 
 > **Mission-critical, offline-first marine intelligence and safety platform engineered for Sri Lankan artisanal and multiday offshore fishermen.**
 
@@ -139,20 +139,49 @@ open http://localhost:8000/api/v1/docs
 The automated test suite verifies API security, data isolation, rate limiting, and bundle generation:
 
 ```
-tests/test_auth.py::test_register_fisherman_success PASSED               [  7%]
-tests/test_auth.py::test_register_duplicate_phone_rejected PASSED        [ 14%]
-tests/test_auth.py::test_login_with_phone_number PASSED                  [ 21%]
-tests/test_auth.py::test_login_with_email PASSED                         [ 28%]
-tests/test_auth.py::test_login_invalid_password PASSED                   [ 35%]
-tests/test_auth.py::test_get_current_user_profile PASSED                 [ 42%]
-tests/test_auth.py::test_get_current_user_unauthorized_without_token PASSED [ 50%]
-tests/test_pfz_and_weather.py::test_pfz_geojson_export PASSED            [ 57%]
-tests/test_pfz_and_weather.py::test_weather_cache_and_point_query PASSED [ 64%]
-tests/test_rate_limiter.py::test_rate_limiter_allows_normal_traffic PASSED [ 71%]
-tests/test_sync.py::test_download_offline_sync_bundle PASSED             [ 78%]
-tests/test_vessels.py::test_register_vessel PASSED                       [ 85%]
-tests/test_vessels.py::test_list_user_vessels PASSED                     [ 92%]
-tests/test_vessels.py::test_ping_vessel_offshore_location PASSED         [100%]
+tests/test_alert_engine.py::test_onshore_vessel_receives_push_notification PASSED [  4%]
+tests/test_alert_engine.py::test_offshore_offline_vessel_escalates_to_sms_fallback PASSED [  8%]
+tests/test_alert_engine.py::test_safety_evaluator_triggers_and_deduplicates_alerts PASSED [ 12%]
+tests/test_alert_engine.py::test_celery_safety_evaluation_task PASSED    [ 16%]
+tests/test_auth.py::test_register_fisherman_success PASSED               [ 20%]
+tests/test_auth.py::test_register_duplicate_phone_rejected PASSED        [ 25%]
+tests/test_auth.py::test_login_with_phone_number PASSED                  [ 29%]
+tests/test_auth.py::test_login_with_email PASSED                         [ 33%]
+tests/test_auth.py::test_login_invalid_password PASSED                   [ 37%]
+tests/test_auth.py::test_get_current_user_profile PASSED                 [ 41%]
+tests/test_auth.py::test_get_current_user_unauthorized_without_token PASSED [ 45%]
+tests/test_pfz_algorithm.py::test_pfz_detector_extracts_thermal_fronts PASSED [ 50%]
+tests/test_pfz_algorithm.py::test_pfz_detector_geojson_conversion PASSED [ 54%]
+tests/test_pfz_and_weather.py::test_pfz_geojson_export PASSED            [ 58%]
+tests/test_pfz_and_weather.py::test_weather_cache_and_point_query PASSED [ 62%]
+tests/test_pipeline_tasks.py::test_copernicus_pfz_pipeline_execution PASSED [ 66%]
+tests/test_pipeline_tasks.py::test_marine_weather_ingestion_pipeline_execution PASSED [ 70%]
+tests/test_rate_limiter.py::test_rate_limiter_allows_normal_traffic PASSED [ 75%]
+tests/test_sync.py::test_download_offline_sync_bundle PASSED             [ 79%]
+tests/test_vessels.py::test_register_vessel PASSED                       [ 83%]
+tests/test_vessels.py::test_list_user_vessels PASSED                     [ 87%]
+tests/test_vessels.py::test_ping_vessel_offshore_location PASSED         [ 91%]
+tests/test_weather_providers.py::test_weather_service_automated_failover PASSED [ 95%]
+tests/test_weather_providers.py::test_weather_service_raises_when_all_providers_fail PASSED [100%]
 
-======================== 14 passed, 4 warnings in 3.70s ========================
+======================= 24 passed, 4 warnings in 23.33s ========================
 ```
+
+---
+
+## 7. Future Work & Production Telecom Integrations
+
+> [!IMPORTANT]
+> **Production Gateway Transition Plan**
+> In accordance with development protocols, mock implementations have been provided for SMS fallback and Push notification dispatch during testing and offline development. The codebase is architected with complete interface/adapter isolation to enable zero-code-change credential injection for production rollout:
+
+1. **Twilio SMS Gateway Deployment:**
+   - Populate `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, and `TWILIO_PHONE_NUMBER` in `backend/.env`.
+   - The [`SMSFallbackClient`](file:///home/kisalnelaka/Work/lellama/backend/app/services/alert_dispatcher.py) will automatically switch from internal audit logging to live telecommunications dispatch.
+2. **Direct Sri Lankan Telecom Integrations:**
+   - Integrate native Dialog Axiata (Ideamart / IDEA Pro) and SLT-Mobitel (mConnect) direct SMPP/HTTP SMS gateways for high-priority cell tower coastal propagation over the 900MHz band (which penetrates significantly farther offshore than higher LTE frequencies).
+3. **Apple APNs / Google Firebase Cloud Messaging (FCM):**
+   - Populate `FCM_SERVER_KEY` to activate production background push wakeups for early morning forecast caching before fishermen cast off.
+4. **VHF Marine Radio Broadcast Bridge:**
+   - Automated text-to-speech conversion of trilingual warning payloads for automated broadcast over VHF marine radio channels 16 and 68 via Sri Lanka Coast Guard radio stations (Colombo Radio / Galle Port Control).
+

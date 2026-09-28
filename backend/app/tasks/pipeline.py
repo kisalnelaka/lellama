@@ -181,14 +181,20 @@ def run_marine_weather_ingestion(
 def run_daily_marine_pipeline() -> Dict[str, Any]:
     """Master cron task scheduled daily at 03:00 AM local time.
 
-    Executes PFZ satellite extraction first, followed by weather caching for updated zones.
+    Executes PFZ satellite extraction first, followed by weather caching for updated zones,
+    and runs the marine safety threshold alert evaluation.
     """
     logger.info("Starting Master 03:00 AM Sri Lanka Marine Pipeline...")
     pfz_result = run_copernicus_pfz_pipeline()
     weather_result = run_marine_weather_ingestion()
+
+    from app.tasks.alerting import evaluate_marine_safety_thresholds
+    alert_result = evaluate_marine_safety_thresholds()
+
     return {
         "status": "completed",
         "timestamp": datetime.now(timezone.utc).isoformat(),
         "pfz_result": pfz_result,
         "weather_result": weather_result,
+        "alert_result": alert_result,
     }
