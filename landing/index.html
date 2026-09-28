@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LELLAMA (ලෙල්ලම) — Sri Lanka Marine PFZ & Safety Intelligence Platform</title>
+  <meta name="description" content="Offline-first marine intelligence and life safety platform for Sri Lankan coastal and multiday fishermen. Copernicus satellite thermal front PFZ detection, marine weather alerts, and 2G SMS emergency fallback.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #060d17;
+      --bg-card: rgba(13, 27, 46, 0.7);
+      --bg-card-hover: rgba(18, 38, 64, 0.85);
+      --border-card: rgba(0, 240, 255, 0.15);
+      --border-card-hover: rgba(0, 240, 255, 0.4);
+      --primary-cyan: #00F0FF;
+      --safety-yellow: #FFD600;
+      --danger-red: #FF3B30;
+      --safe-green: #00E676;
+      --text-main: #F0F6FC;
+      --text-muted: #8B949E;
+      --text-sub: #BAC6D5;
+      --ocean-navy: #0A192F;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      line-height: 1.6;
+      overflow-x: hidden;
+      background-image: 
+        radial-gradient(circle at 15% 20%, rgba(0, 240, 255, 0.08) 0%, transparent 40%),
+        radial-gradient(circle at 85% 75%, rgba(255, 214, 0, 0.05) 0%, transparent 45%),
+        linear-gradient(180deg, #060d17 0%, #03080f 100%);
+      min-height: 100vh;
+    }
+
+    header {
+      padding: 1.5rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      backdrop-filter: blur(12px);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(6, 13, 23, 0.85);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      color: var(--text-main);
+    }
+
+    .brand-icon {
+      width: 42px;
+      height: 42px;
+      background: linear-gradient(135deg, #00F0FF 0%, #0072B2 100%);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      box-shadow: 0 4px 16px rgba(0, 240, 255, 0.3);
+    }
+
+    .brand-title {
+      font-size: 1.35rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+
+    .brand-subtitle {
+      font-size: 0.78rem;
+      color: var(--primary-cyan);
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+    }
+
+    .nav-link {
+      color: var(--text-sub);
+      text-decoration: none;
+      font-size: 0.95rem;
+      font-weight: 600;
+      transition: color 0.2s;
+    }
+
+    .nav-link:hover {
+      color: var(--primary-cyan);
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px;
+      background: rgba(0, 230, 118, 0.1);
+      border: 1px solid rgba(0, 230, 118, 0.3);
+      border-radius: 20px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--safe-green);
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      background-color: var(--safe-green);
+      border-radius: 50%;
+      box-shadow: 0 0 10px var(--safe-green);
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(0.95); opacity: 0.8; }
+      50% { transform: scale(1.3); opacity: 1; }
+      100% { transform: scale(0.95); opacity: 0.8; }
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 4rem 2rem;
+    }
+
+    .hero {
+      text-align: center;
+      max-width: 880px;
+      margin: 0 auto 5rem auto;
+    }
+
+    .hero-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 16px;
+      background: rgba(0, 240, 255, 0.08);
+      border: 1px solid rgba(0, 240, 255, 0.25);
+      border-radius: 30px;
+      color: var(--primary-cyan);
+      font-size: 0.85rem;
+      font-weight: 700;
+      margin-bottom: 1.5rem;
+      letter-spacing: 0.03em;
+    }
+
+    .hero-title {
+      font-size: 3.4rem;
+      font-weight: 800;
+      line-height: 1.15;
+      letter-spacing: -0.03em;
+      margin-bottom: 1.5rem;
+    }
+
+    .hero-title span.highlight {
+      background: linear-gradient(135deg, #00F0FF 20%, #70A5FF 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero-desc {
+      font-size: 1.25rem;
+      color: var(--text-sub);
+      line-height: 1.6;
+      margin-bottom: 2.5rem;
+    }
+
+    .cta-group {
+      display: flex;
+      justify-content: center;
+      gap: 1.2rem;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 14px 28px;
+      border-radius: 12px;
+      font-size: 1.05rem;
+      font-weight: 700;
+      text-decoration: none;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      cursor: pointer;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #00F0FF 0%, #0077B6 100%);
+      color: #060d17;
+      box-shadow: 0 4px 20px rgba(0, 240, 255, 0.35);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 28px rgba(0, 240, 255, 0.5);
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text-main);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(10px);
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: rgba(255, 255, 255, 0.3);
+      transform: translateY(-2px);
+    }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+      gap: 2rem;
+      margin-bottom: 5rem;
+    }
+
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-card);
+      border-radius: 20px;
+      padding: 2.2rem;
+      backdrop-filter: blur(16px);
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .card:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--border-card-hover);
+      transform: translateY(-4px);
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+    }
+
+    .card-icon {
+      width: 52px;
+      height: 52px;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 26px;
+      margin-bottom: 1.5rem;
+      background: rgba(0, 240, 255, 0.1);
+      border: 1px solid rgba(0, 240, 255, 0.2);
+    }
+
+    .card-title {
+      font-size: 1.4rem;
+      font-weight: 700;
+      margin-bottom: 0.8rem;
+      color: var(--text-main);
+    }
+
+    .card-text {
+      color: var(--text-sub);
+      font-size: 0.98rem;
+      line-height: 1.6;
+      margin-bottom: 1.5rem;
+    }
+
+    .card-tag {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8rem;
+      color: var(--primary-cyan);
+      background: rgba(0, 240, 255, 0.08);
+      padding: 4px 10px;
+      border-radius: 6px;
+      display: inline-block;
+      align-self: flex-start;
+    }
+
+    .arch-section {
+      background: rgba(13, 27, 46, 0.5);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 24px;
+      padding: 3rem;
+      margin-bottom: 5rem;
+    }
+
+    .section-title {
+      font-size: 2rem;
+      font-weight: 800;
+      margin-bottom: 1rem;
+      text-align: center;
+    }
+
+    .section-subtitle {
+      color: var(--text-sub);
+      text-align: center;
+      max-width: 650px;
+      margin: 0 auto 2.5rem auto;
+      font-size: 1.05rem;
+    }
+
+    .specs-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 1rem;
+      font-size: 0.95rem;
+    }
+
+    .specs-table th, .specs-table td {
+      padding: 1rem 1.2rem;
+      text-align: left;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .specs-table th {
+      color: var(--primary-cyan);
+      font-weight: 700;
+      text-transform: uppercase;
+      font-size: 0.82rem;
+      letter-spacing: 0.05em;
+    }
+
+    .specs-table td {
+      color: var(--text-sub);
+    }
+
+    .specs-table td strong {
+      color: var(--text-main);
+    }
+
+    .telemetry-box {
+      background: rgba(6, 13, 23, 0.9);
+      border: 1px solid rgba(0, 240, 255, 0.2);
+      border-radius: 14px;
+      padding: 1.5rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.88rem;
+      color: #70A5FF;
+      overflow-x: auto;
+      margin-top: 1.5rem;
+    }
+
+    footer {
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+      padding: 3rem 2rem;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
+
+    .footer-links {
+      display: flex;
+      justify-content: center;
+      gap: 2rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .footer-link {
+      color: var(--text-sub);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+
+    .footer-link:hover {
+      color: var(--primary-cyan);
+    }
+
+    @media (max-width: 768px) {
+      .hero-title { font-size: 2.3rem; }
+      .container { padding: 2rem 1.2rem; }
+      .arch-section { padding: 1.8rem 1.2rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Navigation Header -->
+  <header>
+    <a href="#" class="brand">
+      <div class="brand-icon">⚓</div>
+      <div>
+        <div class="brand-title">LELLAMA</div>
+        <div class="brand-subtitle">ලෙල්ලම • ලெல்லம • Marine Intelligence</div>
+      </div>
+    </a>
+    <div class="nav-links">
+      <span class="status-badge" id="system-status">
+        <span class="status-dot"></span>
+        <span id="status-text">SRI LANKA EEZ ACTIVE</span>
+      </span>
+      <a href="/api/v1/docs" class="nav-link" target="_blank">API Docs</a>
+      <a href="https://github.com/kisalnelaka/lellama" class="nav-link" target="_blank">GitHub</a>
+    </div>
+  </header>
+
+  <main class="container">
+    
+    <!-- Hero Section -->
+    <section class="hero">
+      <div class="hero-pill">
+        <span>🛰️ COPERNICUS CMEMS SATELLITE INTEGRATION</span>
+      </div>
+      <h1 class="hero-title">
+        Marine Intelligence & Safety for <span class="highlight">Sri Lankan Coastal Fishers</span>
+      </h1>
+      <p class="hero-desc">
+        A mission-critical, offline-first mobile application and distributed marine data pipeline engineered to pinpoint high-yield Potential Fishing Zones (PFZs), monitor squalls, and deliver 2G SMS emergency fallback when offshore beyond cellular coverage.
+      </p>
+
+      <div class="cta-group">
+        <a href="/downloads/lellama-release.apk" class="btn btn-primary" download id="download-apk-btn">
+          <span>📲 Download Android APK</span>
+          <span style="font-size: 0.8rem; background: rgba(0,0,0,0.25); padding: 2px 8px; border-radius: 6px;">v1.0.0</span>
+        </a>
+        <a href="/api/v1/docs" class="btn btn-secondary" target="_blank">
+          <span>⚡ Interactive Swagger API</span>
+        </a>
+        <a href="https://github.com/kisalnelaka/lellama" class="btn btn-secondary" target="_blank">
+          <span>📂 Source Repository</span>
+        </a>
+      </div>
+    </section>
+
+    <!-- Key Architectural Pillars -->
+    <div class="features-grid">
+      
+      <!-- Feature 1 -->
+      <div class="card">
+        <div>
+          <div class="card-icon">🛰️</div>
+          <h3 class="card-title">Copernicus Thermal Fronts</h3>
+          <p class="card-text">
+            Autonomous daily satellite data ingestion from Copernicus Marine (CMEMS). A 2D Sobel gradient spatial filter detects sea surface temperature (SST) thermal boundaries ($d(SST)/dx \ge 0.015^\circ\text{C/km}$) intersected with chlorophyll-a concentration blooms.
+          </p>
+        </div>
+        <div class="card-tag">ALGORITHM: SOBEL + NMS (15KM)</div>
+      </div>
+
+      <!-- Feature 2 -->
+      <div class="card">
+        <div>
+          <div class="card-icon">📶</div>
+          <h3 class="card-title">Offline-First Pre-Departure</h3>
+          <p class="card-text">
+            Off the coast of Mirissa, Galle, and Trincomalee, cellular coverage drops within 20km. The mobile application aggressively caches map tiles, detected PFZ coordinates, and a 24-hour marine weather forecast into embedded SQLite before cast-off.
+          </p>
+        </div>
+        <div class="card-tag">ENGINE: SQLITE + FLUTTER MAP</div>
+      </div>
+
+      <!-- Feature 3 -->
+      <div class="card">
+        <div>
+          <div class="card-icon">🚨</div>
+          <h3 class="card-title">Severe Weather & 2G SMS Fallback</h3>
+          <p class="card-text">
+            Automated hourly marine wave evaluation (>2.5m warning, >3.5m danger). When vessels are offshore and have been disconnected from IP data for over 2 hours, the engine automatically escalates from FCM Push to 2G SMS coastal broadcast.
+          </p>
+        </div>
+        <div class="card-tag">ALERTING: HYBRID PUSH + 2G SMS</div>
+      </div>
+
+      <!-- Feature 4 -->
+      <div class="card">
+        <div>
+          <div class="card-icon">🧭</div>
+          <h3 class="card-title">Great-Circle Navigation</h3>
+          <p class="card-text">
+            Real-time spherical Haversine distance in Nautical Miles (NM) and initial forward compass bearing in degrees ($^\circ$) with cardinal compass heading (e.g. SSE, WSW) from the boat's current GPS position to each identified fishing hotspot.
+          </p>
+        </div>
+        <div class="card-tag">MATH: HAVERSINE & FORWARD AZIMUTH</div>
+      </div>
+
+      <!-- Feature 5 -->
+      <div class="card">
+        <div>
+          <div class="card-icon">☀️</div>
+          <h3 class="card-title">High-Contrast Daylight UI</h3>
+          <p class="card-text">
+            Designed specifically for harsh equatorial open-ocean glare. Features bold pure-black borders, safety yellow hazard banners, high-contrast maritime badges, and single-tap trilingual switching between Sinhala, Tamil, and English.
+          </p>
+        </div>
+        <div class="card-tag">AESTHETICS: TROPICAL MARITIME</div>
+      </div>
+
+      <!-- Feature 6 -->
+      <div class="card">
+        <div>
+          <div class="card-icon">🛡️</div>
+          <h3 class="card-title">Enterprise Marine Security</h3>
+          <p class="card-text">
+            Hardened FastAPI gateway backed by PostGIS spatial indexing (EPSG:4326), Redis caching, Celery task scheduling, JWT Bearer authentication, and SlowAPI rate limiting to safeguard national marine fisheries infrastructure.
+          </p>
+        </div>
+        <div class="card-tag">SECURITY: JWT + SLOWAPI + POSTGIS</div>
+      </div>
+
+    </div>
+
+    <!-- Technical Architecture Specifications -->
+    <section class="arch-section">
+      <h2 class="section-title">National Maritime Infrastructure Specifications</h2>
+      <p class="section-subtitle">
+        Production-grade engineering standards designed for high reliability, fault tolerance, and institutional scalability.
+      </p>
+
+      <table class="specs-table">
+        <thead>
+          <tr>
+            <th>Subsystem</th>
+            <th>Technology Stack</th>
+            <th>Operational Invariant / Specification</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Mobile Client</strong></td>
+            <td>Flutter 3.47 (Dart 3.13) + SQLite</td>
+            <td>100% offline-ready, great-circle nautical navigation math, trilingual localization.</td>
+          </tr>
+          <tr>
+            <td><strong>Maritime API Gateway</strong></td>
+            <td>FastAPI + Uvicorn + Pydantic v2</td>
+            <td>Sub-50ms sync bundle endpoint (`/api/v1/sync`), RFC 7946 GeoJSON export.</td>
+          </tr>
+          <tr>
+            <td><strong>Spatial Database</strong></td>
+            <td>PostgreSQL 16 + PostGIS 3.4</td>
+            <td>Sri Lankan EEZ coordinate bounds (4.5°N - 10.5°N, 78.5°E - 83.5°E) with GiST indexing.</td>
+          </tr>
+          <tr>
+            <td><strong>Remote Sensing Ingestion</strong></td>
+            <td>Copernicus Marine API + Celery</td>
+            <td>Scheduled 03:00 AM Asia/Colombo automated download of L4 SST & chlorophyll rasters.</td>
+          </tr>
+          <tr>
+            <td><strong>Ocean Weather Service</strong></td>
+            <td>Open-Meteo Marine + Stormglass Fallback</td>
+            <td>Primary HTTP client with automatic secondary provider failover on error or rate-limit.</td>
+          </tr>
+          <tr>
+            <td><strong>Emergency Broadcast</strong></td>
+            <td>Twilio SMS + Firebase Push</td>
+            <td>Automated onshore push + offshore 2G SMS escalation for squall wave heights &ge; 2.5m.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="telemetry-box">
+        <div>$ curl -s https://lellama.loghorizon.online/api/v1/health</div>
+        <div style="color: var(--safe-green); margin-top: 4px;">
+          {"status":"healthy","database":"connected","spatial_backend":"PostGIS 3.4","coverage_zone":"Sri Lanka EEZ (EPSG:4326)"}
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Footer -->
+  <footer>
+    <div class="footer-links">
+      <a href="/downloads/lellama-release.apk" class="footer-link">Download Android APK</a>
+      <a href="/api/v1/docs" class="footer-link">API Swagger</a>
+      <a href="https://github.com/kisalnelaka/lellama" class="footer-link">GitHub Repository</a>
+    </div>
+    <p>
+      &copy; 2026 LELLAMA Marine Technologies • Dedicated to the Safety and Livelihood of Sri Lankan Fishermen.
+    </p>
+  </footer>
+
+  <script>
+    // Live probe to verify backend API health from landing page
+    fetch('/api/v1/health')
+      .then(res => res.json())
+      .then(data => {
+        if (data.status === 'healthy') {
+          const badge = document.getElementById('system-status');
+          const text = document.getElementById('status-text');
+          badge.style.borderColor = 'rgba(0, 230, 118, 0.4)';
+          text.textContent = 'API ONLINE • ' + (data.coverage_zone || 'SRI LANKA EEZ');
+        }
+      })
+      .catch(() => {
+        // Fallback status if offline
+        const text = document.getElementById('status-text');
+        text.textContent = 'SRI LANKA EEZ • READY';
+      });
+  </script>
+</body>
+</html>

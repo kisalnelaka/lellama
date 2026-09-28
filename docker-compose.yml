@@ -7,8 +7,6 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-lellama_marine}
       POSTGRES_USER: ${POSTGRES_USER:-lellama_admin}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-secure_marine_password}
-    ports:
-      - "5432:5432"
     volumes:
       - postgis_data:/var/lib/postgresql/data
     healthcheck:
@@ -22,8 +20,6 @@ services:
     container_name: lellama-redis
     restart: always
     command: ["redis-server", "--appendonly", "yes"]
-    ports:
-      - "6379:6379"
     volumes:
       - redis_data:/data
     healthcheck:
@@ -40,7 +36,9 @@ services:
     restart: always
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 4
     ports:
-      - "8000:8000"
+      - "127.0.0.1:8000:8000"
+    env_file:
+      - ./backend/.env
     environment:
       - DATABASE_URL=postgresql+psycopg://${POSTGRES_USER:-lellama_admin}:${POSTGRES_PASSWORD:-secure_marine_password}@postgis:5432/${POSTGRES_DB:-lellama_marine}
       - REDIS_URL=redis://redis:6379/0
@@ -59,6 +57,8 @@ services:
     container_name: lellama-celery-worker
     restart: always
     command: celery -A app.core.celery_app worker --loglevel=info -c 2
+    env_file:
+      - ./backend/.env
     environment:
       - DATABASE_URL=postgresql+psycopg://${POSTGRES_USER:-lellama_admin}:${POSTGRES_PASSWORD:-secure_marine_password}@postgis:5432/${POSTGRES_DB:-lellama_marine}
       - REDIS_URL=redis://redis:6379/0
@@ -76,6 +76,8 @@ services:
     container_name: lellama-celery-beat
     restart: always
     command: celery -A app.core.celery_app beat --loglevel=info
+    env_file:
+      - ./backend/.env
     environment:
       - DATABASE_URL=postgresql+psycopg://${POSTGRES_USER:-lellama_admin}:${POSTGRES_PASSWORD:-secure_marine_password}@postgis:5432/${POSTGRES_DB:-lellama_marine}
       - REDIS_URL=redis://redis:6379/0
