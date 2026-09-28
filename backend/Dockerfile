@@ -1,5 +1,5 @@
 # Multi-stage production Dockerfile for Lellama Marine Backend
-FROM python:3.11-slim AS builder
+FROM python:3.11-slim-bookworm AS builder
 
 WORKDIR /app
 
@@ -15,7 +15,7 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir --user -r requirements.txt
 
 # Final Runtime Stage
-FROM python:3.11-slim AS runtime
+FROM python:3.11-slim-bookworm AS runtime
 
 WORKDIR /app
 
