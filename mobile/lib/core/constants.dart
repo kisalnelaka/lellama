@@ -39,9 +39,13 @@ class MarineConfig {
   static const String apiBaseUrl = 'https://lellama.loghorizon.online/api/v1';
   static const String apiLocalhostUrl = 'http://localhost:8000/api/v1';
 
-  // Tile Providers
-  static const String tileProviderCartoVoyager =
-      'https://a.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png';
+  // Tile Providers (Public zero-watermark maritime basemaps)
+  static const String tileProviderEsriTopo =
+      'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}';
+  static const String tileProviderEsriSatellite =
+      'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
+  static const String tileProviderEsriDark =
+      'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}';
   static const String tileProviderOSM =
       'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
 

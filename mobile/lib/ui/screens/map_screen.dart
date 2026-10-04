@@ -10,7 +10,8 @@ import 'package:lellama_mobile/data/models/pfz_model.dart';
 import 'package:lellama_mobile/ui/widgets/compass_badge.dart';
 
 enum MapThemeMode {
-  nauticalVoyager,
+  nauticalTopo,
+  satelliteOcean,
   tacticalNight,
   openStreet,
 }
@@ -26,7 +27,7 @@ class MapScreen extends StatefulWidget {
 
 class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
   late final MapController _mapController;
-  MapThemeMode _activeTheme = MapThemeMode.nauticalVoyager;
+  MapThemeMode _activeTheme = MapThemeMode.nauticalTopo;
   int _selectedPFZIndex = 0;
   late final PageController _pageController;
 
@@ -88,12 +89,14 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
 
   String _getTileUrl() {
     switch (_activeTheme) {
-      case MapThemeMode.nauticalVoyager:
-        return 'https://a.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png';
+      case MapThemeMode.nauticalTopo:
+        return MarineConfig.tileProviderEsriTopo;
+      case MapThemeMode.satelliteOcean:
+        return MarineConfig.tileProviderEsriSatellite;
       case MapThemeMode.tacticalNight:
-        return 'https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png';
+        return MarineConfig.tileProviderEsriDark;
       case MapThemeMode.openStreet:
-        return 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
+        return MarineConfig.tileProviderOSM;
     }
   }
 
@@ -444,12 +447,22 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
       onSelected: (mode) => setState(() => _activeTheme = mode),
       itemBuilder: (ctx) => [
         const PopupMenuItem(
-          value: MapThemeMode.nauticalVoyager,
+          value: MapThemeMode.nauticalTopo,
           child: Row(
             children: [
               Icon(Icons.sailing_rounded, size: 20, color: MarineColors.primaryBlue),
               SizedBox(width: 10),
-              Text('Maritime Chart (Voyager)'),
+              Text('Maritime Topo Chart'),
+            ],
+          ),
+        ),
+        const PopupMenuItem(
+          value: MapThemeMode.satelliteOcean,
+          child: Row(
+            children: [
+              Icon(Icons.satellite_alt_rounded, size: 20, color: Colors.teal),
+              SizedBox(width: 10),
+              Text('Satellite Ocean (High-Res)'),
             ],
           ),
         ),
@@ -566,9 +579,11 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
                 children: [
                   Transform.rotate(
                     angle: bearingDeg * (math.pi / 180.0),
-                    child: const Icon(
+                    child: Icon(
                       Icons.navigation_rounded,
-                      color: MarineColors.deepNavy,
+                      color: isSelected
+                          ? MarineColors.safetyYellow
+                          : MarineColors.deepNavy,
                       size: 24,
                     ),
                   ),

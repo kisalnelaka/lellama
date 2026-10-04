@@ -35,12 +35,12 @@ class _HomeScreenState extends State<HomeScreen> {
       appBar: AppBar(
         backgroundColor: MarineColors.deepNavy,
         elevation: 0,
-        titleSpacing: 14,
+        titleSpacing: 10,
         title: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              padding: const EdgeInsets.all(6),
+              padding: const EdgeInsets.all(5),
               decoration: BoxDecoration(
                 color: MarineColors.oceanNavy,
                 borderRadius: BorderRadius.circular(8),
@@ -52,10 +52,10 @@ class _HomeScreenState extends State<HomeScreen> {
               child: const Icon(
                 Icons.anchor_rounded,
                 color: MarineColors.safetyYellow,
-                size: 20,
+                size: 18,
               ),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: 7),
             Flexible(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -64,11 +64,12 @@ class _HomeScreenState extends State<HomeScreen> {
                   const Text(
                     MarineConfig.appTitle,
                     overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
                     style: TextStyle(
-                      fontSize: 16,
+                      fontSize: 14.5,
                       fontWeight: FontWeight.w900,
                       color: Colors.white,
-                      letterSpacing: 0.5,
+                      letterSpacing: 0.3,
                     ),
                   ),
                   Text(
@@ -88,14 +89,13 @@ class _HomeScreenState extends State<HomeScreen> {
                 ],
               ),
             ),
-
           ],
         ),
         actions: [
           // 1. Connectivity Status Pill
           Container(
-            margin: const EdgeInsets.symmetric(vertical: 12),
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            margin: const EdgeInsets.symmetric(vertical: 13),
+            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
             decoration: BoxDecoration(
               color: Colors.black26,
               borderRadius: BorderRadius.circular(14),
@@ -110,8 +110,8 @@ class _HomeScreenState extends State<HomeScreen> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Container(
-                  width: 7,
-                  height: 7,
+                  width: 6,
+                  height: 6,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     color: provider.isOffline
@@ -127,22 +127,22 @@ class _HomeScreenState extends State<HomeScreen> {
                     ],
                   ),
                 ),
-                const SizedBox(width: 5),
+                const SizedBox(width: 4),
                 Text(
                   provider.isOffline ? 'CACHED' : 'ONLINE',
                   style: TextStyle(
-                    fontSize: 9.5,
+                    fontSize: 9,
                     fontWeight: FontWeight.w800,
                     color: provider.isOffline
                         ? MarineColors.safetyYellow
                         : Colors.greenAccent,
-                    letterSpacing: 0.5,
+                    letterSpacing: 0.4,
                   ),
                 ),
               ],
             ),
           ),
-          const SizedBox(width: 6),
+          const SizedBox(width: 4),
 
           // 2. Language Selector Dropdown
           PopupMenuButton<String>(
@@ -156,8 +156,8 @@ class _HomeScreenState extends State<HomeScreen> {
               _buildLangMenuItem('en', 'English', provider.selectedLanguage == 'en'),
             ],
             child: Container(
-              margin: const EdgeInsets.symmetric(vertical: 12),
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              margin: const EdgeInsets.symmetric(vertical: 13),
+              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
               decoration: BoxDecoration(
                 color: Colors.white.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(8),
@@ -171,25 +171,27 @@ class _HomeScreenState extends State<HomeScreen> {
                         ? 'සිං'
                         : (provider.selectedLanguage == 'ta' ? 'த' : 'EN'),
                     style: const TextStyle(
-                      fontSize: 12,
+                      fontSize: 11.5,
                       fontWeight: FontWeight.w900,
                       color: Colors.white,
                     ),
                   ),
-                  const Icon(Icons.arrow_drop_down, color: Colors.white70, size: 16),
+                  const Icon(Icons.arrow_drop_down, color: Colors.white70, size: 15),
                 ],
               ),
             ),
           ),
-          const SizedBox(width: 4),
+          const SizedBox(width: 2),
 
           // 3. Quick Sync Button
           IconButton(
             tooltip: provider.tr('sync_now'),
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
             icon: provider.isLoading
                 ? const SizedBox(
-                    width: 20,
-                    height: 20,
+                    width: 18,
+                    height: 18,
                     child: CircularProgressIndicator(
                       strokeWidth: 2.2,
                       color: MarineColors.safetyYellow,
@@ -198,7 +200,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 : const Icon(
                     Icons.sync_rounded,
                     color: MarineColors.safetyYellow,
-                    size: 24,
+                    size: 22,
                   ),
             onPressed: provider.isLoading ? null : () => provider.syncData(),
           ),
@@ -253,7 +255,7 @@ class _HomeScreenState extends State<HomeScreen> {
               child: const Icon(Icons.radar_rounded, color: MarineColors.safetyYellow),
             ),
             label: provider.selectedLanguage == 'si'
-                ? 'කලාප ($activePFZCount)'
+                ? 'කලාප'
                 : (provider.selectedLanguage == 'ta'
                     ? 'மண்டலங்கள்'
                     : 'PFZ Zones'),
