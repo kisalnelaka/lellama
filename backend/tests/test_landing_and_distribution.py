@@ -29,3 +29,4 @@ def test_apk_download_route(client: TestClient):
     assert response.status_code == 200
     assert response.headers.get("content-type") == "application/vnd.android.package-archive"
     assert len(response.content) > 1000000  # Multi-megabyte APK
+

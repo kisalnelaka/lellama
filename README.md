@@ -5,7 +5,7 @@
 [![PostGIS](https://img.shields.io/badge/PostGIS-16--3.4-336791.svg?logo=postgresql)](https://postgis.net)
 [![Flutter](https://img.shields.io/badge/Flutter-3.47+-02569B.svg?logo=flutter)](https://flutter.dev)
 [![Pytest](https://img.shields.io/badge/Backend%20Pytest-28%20Passed-brightgreen.svg)]()
-[![Flutter Test](https://img.shields.io/badge/Mobile%20Tests-4%20Passed-brightgreen.svg)]()
+[![Flutter Test](https://img.shields.io/badge/Mobile%20Tests-5%20Passed-brightgreen.svg)]()
 
 > **Mission-critical, offline-first marine intelligence and safety platform engineered for Sri Lankan artisanal and multiday offshore fishermen.**
 
@@ -190,13 +190,14 @@ tests/test_weather_providers.py::test_weather_service_raises_when_all_providers_
 ======================= 24 passed, 4 warnings in 48.83s ========================
 ```
 
-### Mobile Test Suite (Flutter: 4 Passed, 0 Analyzer Issues)
+### Mobile Test Suite (Flutter: 5 Passed, 0 Analyzer Issues)
 ```
 00:00 +0: Great-circle navigation distance and bearing calculation
 00:00 +1: Lellama Marine App renders daylight UI and language controls
 00:01 +2: PFZModel GeoJSON feature parsing and SQLite round-trip mapping
 00:01 +3: WeatherModel and AlertModel localization and data contracts
-00:01 +4: All tests passed!
+00:01 +4: HarbourLocation catalog and MarineProvider harbor/vessel operations
+00:01 +5: All tests passed!
 
 $ flutter analyze
 Analyzing mobile...
