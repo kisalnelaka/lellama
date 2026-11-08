@@ -5,10 +5,14 @@ Supports Open-Meteo Marine as primary source and Stormglass.io as automated fall
 
 from abc import ABC, abstractmethod
 from datetime import datetime, timezone
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, TYPE_CHECKING
 import logging
 import httpx
 from app.core.config import settings
+
+if TYPE_CHECKING:
+    from sqlalchemy.orm import Session
+    from app.models.weather import WeatherCache
 
 logger = logging.getLogger(__name__)
 
@@ -265,3 +269,45 @@ class MarineWeatherService:
                 raise RuntimeError(
                     f"Weather providers unavailable: {primary_error} | {fallback_error}"
                 )
+
+    def get_marine_forecast(
+        self,
+        latitude: float,
+        longitude: float,
+        location_name: Optional[str] = None,
+        persist_db: Optional["Session"] = None,
+    ) -> List["WeatherCache"]:
+        """Fetch forecast from active providers, optionally cache in database, and return WeatherCache records."""
+        from app.models.weather import WeatherCache
+
+        items = self.get_forecast(latitude, longitude, location_name=location_name)
+        records: List[WeatherCache] = []
+        for item in items:
+            record_dict = item.to_dict()
+            cache_entry = WeatherCache(
+                latitude=record_dict["latitude"],
+                longitude=record_dict["longitude"],
+                location_name=record_dict["location_name"],
+                forecast_timestamp=record_dict["forecast_timestamp"],
+                valid_for_time=record_dict["valid_for_time"],
+                wave_height=record_dict["wave_height"],
+                wave_direction=record_dict["wave_direction"],
+                wind_wave_height=record_dict["wind_wave_height"],
+                swell_wave_height=record_dict["swell_wave_height"],
+                ocean_current_velocity=record_dict["ocean_current_velocity"],
+                ocean_current_direction=record_dict["ocean_current_direction"],
+                source=record_dict["source"],
+                is_stale=False,
+            )
+            records.append(cache_entry)
+            if persist_db:
+                persist_db.add(cache_entry)
+
+        if persist_db and records:
+            try:
+                persist_db.commit()
+            except Exception as e:
+                persist_db.rollback()
+                logger.warning("Failed to commit cached weather records: %s", e)
+
+        return records

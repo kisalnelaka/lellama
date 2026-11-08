@@ -5,6 +5,23 @@ from typing import List, Optional
 from pydantic import BaseModel, Field, ConfigDict
 
 
+class WeatherCreate(BaseModel):
+    """Payload schema for manual or ingestion pipeline weather cache creation."""
+
+    latitude: float = Field(..., ge=-90.0, le=90.0)
+    longitude: float = Field(..., ge=-180.0, le=180.0)
+    location_name: Optional[str] = None
+    forecast_timestamp: datetime
+    valid_for_time: datetime
+    wave_height: float = Field(..., ge=0.0, description="Wave height in meters")
+    wave_direction: float = Field(..., ge=0.0, le=360.0, description="Wave direction in degrees")
+    wind_wave_height: float = Field(..., ge=0.0, description="Wind wave height in meters")
+    swell_wave_height: float = Field(..., ge=0.0, description="Swell wave height in meters")
+    ocean_current_velocity: float = Field(..., ge=0.0, description="Current speed in m/s")
+    ocean_current_direction: float = Field(..., ge=0.0, le=360.0, description="Current direction in degrees")
+    source: str = "open-meteo"
+
+
 class WeatherResponse(BaseModel):
     """Single marine weather forecast record."""
 

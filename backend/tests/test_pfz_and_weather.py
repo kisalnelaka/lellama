@@ -71,3 +71,30 @@ def test_weather_cache_and_point_query(
     assert len(data["forecasts"]) >= 1
     assert data["forecasts"][0]["wave_height"] == 1.8
     assert data["warning_active"] is False
+
+
+def test_weather_cache_post_endpoint(
+    client: TestClient, auth_headers: dict, db_session: Session
+):
+    """Ensure POST /api/v1/weather/cache creates a structured record."""
+    now = datetime.now(timezone.utc)
+    payload = {
+        "latitude": 5.95,
+        "longitude": 80.46,
+        "location_name": "Mirissa Fishery Harbour",
+        "forecast_timestamp": now.isoformat(),
+        "valid_for_time": (now + timedelta(hours=2)).isoformat(),
+        "wave_height": 2.6,
+        "wave_direction": 220.0,
+        "wind_wave_height": 1.2,
+        "swell_wave_height": 2.0,
+        "ocean_current_velocity": 0.6,
+        "ocean_current_direction": 190.0,
+        "source": "open-meteo",
+    }
+    response = client.post("/api/v1/weather/cache", json=payload, headers=auth_headers)
+    assert response.status_code == 201
+    res_data = response.json()
+    assert res_data["wave_height"] == 2.6
+    assert res_data["location_name"] == "Mirissa Fishery Harbour"
+

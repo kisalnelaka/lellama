@@ -5,9 +5,11 @@ hourly marine weather forecasting, and emergency SMS/push alerting for Sri Lanka
 """
 
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, Request, status
+from pathlib import Path
+from fastapi import FastAPI, Request, status, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, FileResponse
+from fastapi.staticfiles import StaticFiles
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 
@@ -96,3 +98,55 @@ def readiness_check():
 
 # Mount API v1 router
 app.include_router(api_router, prefix=settings.API_V1_STR)
+
+# Landing page and APK distribution routes
+_candidate_landing_dirs = [
+    Path(__file__).resolve().parent.parent.parent / "landing",
+    Path(__file__).resolve().parent.parent / "landing",
+    Path("/app/landing"),
+]
+landing_dir = next((d for d in _candidate_landing_dirs if d.is_dir()), None)
+
+if landing_dir:
+    app.mount("/static-landing", StaticFiles(directory=str(landing_dir)), name="landing-static")
+
+    @app.get("/", include_in_schema=False)
+    async def serve_landing_index():
+        index_file = landing_dir / "index.html"
+        if index_file.is_file():
+            return FileResponse(index_file)
+        return {"service": settings.PROJECT_NAME, "status": "running"}
+
+    @app.get("/promo-video", include_in_schema=False)
+    @app.get("/promo-video.html", include_in_schema=False)
+    async def serve_promo_video():
+        promo_file = landing_dir / "promo-video.html"
+        if promo_file.is_file():
+            return FileResponse(promo_file)
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Promo video not found")
+
+
+_candidate_apk_paths = [
+    Path(__file__).resolve().parent.parent.parent / "mobile/build/app/outputs/flutter-apk/app-release.apk",
+    Path(__file__).resolve().parent.parent / "mobile/build/app/outputs/flutter-apk/app-release.apk",
+    Path("/app/downloads/lellama-v1.1.apk"),
+    Path(__file__).resolve().parent.parent.parent / "mobile/build/app/outputs/apk/release/app-release.apk",
+]
+apk_path = next((p for p in _candidate_apk_paths if p.is_file()), None)
+
+
+@app.get("/downloads/lellama-v1.1.apk", include_in_schema=False)
+@app.get("/downloads/app-release.apk", include_in_schema=False)
+async def download_apk():
+    """Serve the compiled Android release APK for offshore coastal fishermen."""
+    if apk_path and apk_path.is_file():
+        return FileResponse(
+            apk_path,
+            media_type="application/vnd.android.package-archive",
+            filename="lellama-v1.1.apk",
+        )
+    raise HTTPException(
+        status_code=status.HTTP_404_NOT_FOUND,
+        detail="Mobile APK binary is currently building or not present on this host.",
+    )
+

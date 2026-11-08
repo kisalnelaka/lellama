@@ -9,7 +9,8 @@ from app.core.database import get_db
 from app.core.security import get_current_user
 from app.models.user import User
 from app.models.weather import WeatherCache
-from app.schemas.weather import WeatherResponse, WeatherForecastSeries
+from app.schemas.weather import WeatherResponse, WeatherForecastSeries, WeatherCreate
+from app.services.weather_provider import MarineWeatherService
 
 router = APIRouter(prefix="/weather", tags=["Marine Weather"])
 
@@ -45,6 +46,16 @@ def get_point_weather_series(
         .all()
     )
 
+    # On-demand failover fetch if cache is unseeded
+    if not records:
+        try:
+            weather_svc = MarineWeatherService()
+            records = weather_svc.get_marine_forecast(
+                latitude, longitude, location_name=location_name, persist_db=db
+            )
+        except Exception:
+            records = []
+
     forecast_items = [WeatherResponse.model_validate(r) for r in records]
     max_wave = (
         max([f.wave_height for f in forecast_items]) if forecast_items else 0.0
@@ -68,35 +79,24 @@ def get_point_weather_series(
     summary="Ingest a weather cache entry (Ingestion Pipeline)",
 )
 def create_weather_cache_entry(
-    latitude: float,
-    longitude: float,
-    forecast_timestamp: datetime,
-    valid_for_time: datetime,
-    wave_height: float,
-    wave_direction: float,
-    wind_wave_height: float,
-    swell_wave_height: float,
-    ocean_current_velocity: float,
-    ocean_current_direction: float,
-    source: str = "open-meteo",
-    location_name: Optional[str] = None,
+    payload: WeatherCreate,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """Record an hourly marine forecast point in the database cache."""
     entry = WeatherCache(
-        latitude=latitude,
-        longitude=longitude,
-        location_name=location_name,
-        forecast_timestamp=forecast_timestamp,
-        valid_for_time=valid_for_time,
-        wave_height=wave_height,
-        wave_direction=wave_direction,
-        wind_wave_height=wind_wave_height,
-        swell_wave_height=swell_wave_height,
-        ocean_current_velocity=ocean_current_velocity,
-        ocean_current_direction=ocean_current_direction,
-        source=source,
+        latitude=payload.latitude,
+        longitude=payload.longitude,
+        location_name=payload.location_name,
+        forecast_timestamp=payload.forecast_timestamp,
+        valid_for_time=payload.valid_for_time,
+        wave_height=payload.wave_height,
+        wave_direction=payload.wave_direction,
+        wind_wave_height=payload.wind_wave_height,
+        swell_wave_height=payload.swell_wave_height,
+        ocean_current_velocity=payload.ocean_current_velocity,
+        ocean_current_direction=payload.ocean_current_direction,
+        source=payload.source,
         is_stale=False,
     )
     db.add(entry)
