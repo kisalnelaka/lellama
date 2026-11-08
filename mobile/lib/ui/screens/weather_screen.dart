@@ -26,7 +26,7 @@ class _WeatherScreenState extends State<WeatherScreen> {
     final filteredForecasts = _selectedHarbourFilter == 'All'
         ? allForecasts
         : allForecasts
-            .filter((f) => f.locationName.toLowerCase().contains(_selectedHarbourFilter.toLowerCase()))
+            .where((f) => f.locationName.toLowerCase().contains(_selectedHarbourFilter.toLowerCase()))
             .toList();
 
     final maxWave = provider.maxForecastedWaveHeight;
@@ -474,8 +474,4 @@ class _WeatherScreenState extends State<WeatherScreen> {
       ),
     );
   }
-}
-
-extension _IterableFilter<E> on Iterable<E> {
-  Iterable<E> filter(bool Function(E element) test) => where(test);
 }

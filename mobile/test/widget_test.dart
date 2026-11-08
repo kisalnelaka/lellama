@@ -6,6 +6,7 @@ import 'package:lellama_mobile/core/constants.dart';
 import 'package:lellama_mobile/core/geo_math.dart';
 import 'package:lellama_mobile/data/models/pfz_model.dart';
 import 'package:lellama_mobile/data/models/weather_model.dart';
+import 'package:lellama_mobile/data/models/alert_model.dart';
 import 'package:lellama_mobile/providers/marine_provider.dart';
 import 'package:lellama_mobile/services/sync_service.dart';
 
@@ -111,6 +112,75 @@ void main() {
     // Verify Potential Fishing Zone cards render
     expect(find.byType(ListView), findsWidgets);
     expect(find.textContaining('Confidence'), findsWidgets);
+  });
+
+  test('PFZModel GeoJSON feature parsing and SQLite round-trip mapping', () {
+    final feature = {
+      'type': 'Feature',
+      'geometry': {
+        'type': 'Point',
+        'coordinates': [80.75, 5.85],
+      },
+      'properties': {
+        'id': 'pfz-geo-test',
+        'detection_date': '2026-09-29',
+        'sst_celsius': 28.5,
+        'sst_gradient_c_per_km': 0.42,
+        'chlorophyll_mg_m3': 1.95,
+        'confidence': 0.89,
+        'status': 'active',
+      },
+    };
+
+    final pfz = PFZModel.fromGeoJsonFeature(feature);
+    expect(pfz.id, equals('pfz-geo-test'));
+    expect(pfz.longitude, equals(80.75));
+    expect(pfz.latitude, equals(5.85));
+    expect(pfz.sstCelsius, equals(28.5));
+    expect(pfz.sstGradient, equals(0.42));
+    expect(pfz.chlorophyll, equals(1.95));
+    expect(pfz.confidence, equals(0.89));
+
+    final dbMap = pfz.toDbMap();
+    final roundTripped = PFZModel.fromDbMap(dbMap);
+    expect(roundTripped.id, equals(pfz.id));
+    expect(roundTripped.latitude, equals(pfz.latitude));
+    expect(roundTripped.longitude, equals(pfz.longitude));
+    expect(roundTripped.confidence, equals(pfz.confidence));
+  });
+
+  test('WeatherModel and AlertModel localization and data contracts', () {
+    final weather = WeatherModel(
+      id: 'w-test-1',
+      latitude: 6.03,
+      longitude: 80.21,
+      locationName: 'Galle Fishery Harbour',
+      validForTime: '2026-09-29T06:00:00Z',
+      waveHeight: 2.7,
+      waveDirection: 215.0,
+      windWaveHeight: 1.2,
+      swellWaveHeight: 2.1,
+      oceanCurrentVelocity: 0.7,
+    );
+
+    final wMap = weather.toDbMap();
+    final wRestored = WeatherModel.fromDbMap(wMap);
+    expect(wRestored.locationName, equals('Galle Fishery Harbour'));
+    expect(wRestored.waveHeight, equals(2.7));
+
+    final alert = AlertModel(
+      id: 'alert-test-1',
+      alertLevel: 'danger',
+      messageSinhala: 'අවවාදයයි: මුහුද රළුයි',
+      messageTamil: 'எச்சரிக்கை: கொந்தளிப்பான கடல்',
+      messageEnglish: 'WARNING: Rough sea conditions',
+      triggerCause: 'wave_height_exceeded',
+      createdAt: '2026-09-29T04:00:00Z',
+    );
+
+    expect(alert.getLocalizedMessage('si'), contains('අවවාදයයි'));
+    expect(alert.getLocalizedMessage('ta'), contains('எச்சரிக்கை'));
+    expect(alert.getLocalizedMessage('en'), contains('WARNING'));
   });
 }
 

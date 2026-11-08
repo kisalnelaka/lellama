@@ -42,8 +42,16 @@ class SyncService {
     String baseUrl = MarineConfig.apiBaseUrl,
   }) async {
     try {
-      final queryParam = vesselId != null ? '?vessel_id=$vesselId' : '';
-      final url = Uri.parse('$baseUrl/sync/$queryParam');
+      final normalizedBase = baseUrl.endsWith('/')
+          ? baseUrl.substring(0, baseUrl.length - 1)
+          : baseUrl;
+      final queryParams = <String, String>{};
+      if (vesselId != null && vesselId.isNotEmpty) {
+        queryParams['vessel_id'] = vesselId;
+      }
+      final url = Uri.parse('$normalizedBase/sync/').replace(
+        queryParameters: queryParams.isNotEmpty ? queryParams : null,
+      );
 
       final headers = <String, String>{
         'Content-Type': 'application/json',
