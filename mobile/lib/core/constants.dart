@@ -60,5 +60,99 @@ class MarineConfig {
   // Maritime Safety Thresholds
   static const double waveWarningThreshold = 2.5; // meters
   static const double waveDangerThreshold = 3.5; // meters
+
+  // Key Sri Lankan Departure Harbours
+  static const List<HarborLocation> sriLankanHarbors = [
+    HarborLocation(
+      name: 'Mirissa Fishery Harbour',
+      nameSinhala: 'මිරිස්ස ධීවර වරාය',
+      nameTamil: 'மிரிஸ்ஸ மீன்பிடித் துறைமுகம்',
+      latitude: 5.9482,
+      longitude: 80.4578,
+      region: 'Southern Province',
+    ),
+    HarborLocation(
+      name: 'Beruwala Fishery Harbour',
+      nameSinhala: 'බේරුවල ධීවර වරාය',
+      nameTamil: 'பேருவளை மீன்பிடித் துறைமுகம்',
+      latitude: 6.4789,
+      longitude: 79.9827,
+      region: 'Western Province',
+    ),
+    HarborLocation(
+      name: 'Galle Fishery Harbour',
+      nameSinhala: 'ගාල්ල ධීවර වරාය',
+      nameTamil: 'காலி மீன்பிடித் துறைமுகம்',
+      latitude: 6.0329,
+      longitude: 80.2168,
+      region: 'Southern Province',
+    ),
+    HarborLocation(
+      name: 'Tangalle Fishery Harbour',
+      nameSinhala: 'තංගල්ල ධීවර වරාය',
+      nameTamil: 'தங்கல்ல மீன்பிடித் துறைமுகம்',
+      latitude: 6.0244,
+      longitude: 80.7941,
+      region: 'Southern Province',
+    ),
+    HarborLocation(
+      name: 'Dondra Fishery Point',
+      nameSinhala: 'දෙවිනුවර ධීවර තොටුපළ',
+      nameTamil: 'தேவிநுவர மீன்பிடித் தளம்',
+      latitude: 5.9234,
+      longitude: 80.5894,
+      region: 'Southern Province',
+    ),
+    HarborLocation(
+      name: 'Negombo Lagoon & Harbour',
+      nameSinhala: 'මීගමුව ධීවර වරාය',
+      nameTamil: 'நீர்கொழும்பு மீன்பிடித் துறைமுகம்',
+      latitude: 7.2008,
+      longitude: 79.8736,
+      region: 'Western Province',
+    ),
+    HarborLocation(
+      name: 'Trincomalee Cod Bay Harbour',
+      nameSinhala: 'ත්‍රිකුණාමලය කොඩ් බේ වරාය',
+      nameTamil: 'திருகோணமலை காட் விரிகுடா',
+      latitude: 8.5874,
+      longitude: 81.2152,
+      region: 'Eastern Province',
+    ),
+    HarborLocation(
+      name: 'Kalpitiya Landing Site',
+      nameSinhala: 'කල්පිටිය ගොඩබෑමේ තොටුපළ',
+      nameTamil: 'கற்பிட்டி இறங்கு தளம்',
+      latitude: 8.2285,
+      longitude: 79.7656,
+      region: 'North Western Province',
+    ),
+  ];
 }
+
+/// Structured metadata for a Sri Lankan coastal departure harbour.
+class HarborLocation {
+  final String name;
+  final String nameSinhala;
+  final String nameTamil;
+  final double latitude;
+  final double longitude;
+  final String region;
+
+  const HarborLocation({
+    required this.name,
+    required this.nameSinhala,
+    required this.nameTamil,
+    required this.latitude,
+    required this.longitude,
+    required this.region,
+  });
+
+  String getLocalizedName(String lang) {
+    if (lang == 'si') return nameSinhala;
+    if (lang == 'ta') return nameTamil;
+    return name;
+  }
+}
+
 

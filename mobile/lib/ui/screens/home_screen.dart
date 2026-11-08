@@ -183,7 +183,21 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           const SizedBox(width: 2),
 
-          // 3. Quick Sync Button
+          // 3. Vessel Registration / Profile
+          IconButton(
+            tooltip: provider.tr('vessel_settings'),
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+            icon: const Icon(
+              Icons.directions_boat_outlined,
+              color: Colors.white,
+              size: 20,
+            ),
+            onPressed: () => _showVesselSettingsDialog(context, provider),
+          ),
+          const SizedBox(width: 2),
+
+          // 4. Quick Sync Button
           IconButton(
             tooltip: provider.tr('sync_now'),
             padding: EdgeInsets.zero,
@@ -289,6 +303,119 @@ class _HomeScreenState extends State<HomeScreen> {
             const Icon(Icons.check_rounded, color: MarineColors.primaryBlue, size: 18),
         ],
       ),
+    );
+  }
+
+  void _showVesselSettingsDialog(BuildContext context, MarineProvider provider) {
+    final textController = TextEditingController(text: provider.vesselRegistration);
+
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        return AlertDialog(
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: Row(
+            children: [
+              const Icon(Icons.directions_boat_filled_rounded, color: MarineColors.oceanNavy),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  provider.tr('vessel_settings'),
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w900,
+                    color: MarineColors.deepNavy,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                provider.tr('vessel_reg_number'),
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  color: MarineColors.textSecondary,
+                ),
+              ),
+              const SizedBox(height: 6),
+              TextField(
+                controller: textController,
+                textCapitalization: TextCapitalization.characters,
+                decoration: InputDecoration(
+                  hintText: 'e.g. IMUL-A-0982-KLT',
+                  filled: true,
+                  fillColor: const Color(0xFFF1F5F9),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide: BorderSide.none,
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                ),
+              ),
+              const SizedBox(height: 14),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF8FAFC),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(Icons.anchor_rounded, size: 16, color: MarineColors.primaryBlue),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            '${provider.tr('departure_harbor')}: ${provider.departureHarborName}',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: MarineColors.deepNavy,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '${provider.tr('last_sync')}: ${provider.lastSyncDisplay}',
+                      style: const TextStyle(fontSize: 11, color: Colors.grey),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: Text(provider.tr('cancel')),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: MarineColors.deepNavy,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+              onPressed: () {
+                provider.setVesselRegistration(textController.text);
+                Navigator.of(ctx).pop();
+                provider.syncData();
+              },
+              child: Text(provider.tr('save')),
+            ),
+          ],
+        );
+      },
     );
   }
 }

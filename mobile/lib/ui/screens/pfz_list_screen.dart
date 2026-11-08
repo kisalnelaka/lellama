@@ -82,12 +82,12 @@ class _PFZListScreenState extends State<PFZListScreen> {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        'Copernicus CMEMS • Sri Lanka EEZ',
+                        '${provider.departureHarborName} • CMEMS L4',
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           fontSize: 11.5,
-                          color: Colors.grey.shade600,
-                          fontWeight: FontWeight.w600,
+                          color: MarineColors.primaryBlue,
+                          fontWeight: FontWeight.w700,
                         ),
                       ),
                     ],
@@ -96,16 +96,22 @@ class _PFZListScreenState extends State<PFZListScreen> {
                 const SizedBox(width: 8),
                 // Sort Toggle
                 SegmentedButton<PFZSortOrder>(
-                  segments: const [
+                  segments: [
                     ButtonSegment(
                       value: PFZSortOrder.nearest,
-                      icon: Icon(Icons.near_me_outlined, size: 16),
-                      label: Text('Nearest', style: TextStyle(fontSize: 12)),
+                      icon: const Icon(Icons.near_me_outlined, size: 16),
+                      label: Text(
+                        provider.selectedLanguage == 'en' ? 'Nearest' : 'ළඟම',
+                        style: const TextStyle(fontSize: 11.5),
+                      ),
                     ),
                     ButtonSegment(
                       value: PFZSortOrder.confidence,
-                      icon: Icon(Icons.verified_outlined, size: 16),
-                      label: Text('Score', style: TextStyle(fontSize: 12)),
+                      icon: const Icon(Icons.verified_outlined, size: 16),
+                      label: Text(
+                        provider.selectedLanguage == 'en' ? 'Score' : 'ලකුණු',
+                        style: const TextStyle(fontSize: 11.5),
+                      ),
                     ),
                   ],
                   selected: {_sortOrder},
@@ -192,6 +198,7 @@ class _PFZListScreenState extends State<PFZListScreen> {
         : (pfz.confidence >= 0.70
             ? MarineColors.safetyYellow
             : MarineColors.brightAmber);
+    final isWaypoint = provider.activeWaypoint == pfz;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -386,6 +393,47 @@ class _PFZListScreenState extends State<PFZListScreen> {
                     ),
                   ),
                 ],
+              ),
+            ),
+            const SizedBox(height: 8),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: isWaypoint ? MarineColors.coralRed : MarineColors.deepNavy,
+                  side: BorderSide(
+                    color: isWaypoint ? MarineColors.coralRed : MarineColors.oceanNavy,
+                    width: 1.2,
+                  ),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                ),
+                icon: Icon(
+                  isWaypoint ? Icons.close_rounded : Icons.alt_route_rounded,
+                  size: 16,
+                  color: isWaypoint ? MarineColors.coralRed : MarineColors.primaryBlue,
+                ),
+                label: Text(
+                  isWaypoint ? provider.tr('clear_waypoint') : provider.tr('set_waypoint'),
+                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
+                ),
+                onPressed: () {
+                  final idx = provider.pfzs.indexOf(pfz);
+                  if (isWaypoint) {
+                    provider.setActiveWaypoint(null);
+                  } else {
+                    provider.setActiveWaypoint(idx);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          '${provider.tr('active_course')}: Zone #$rank (${item.distanceNM.toStringAsFixed(1)} NM)',
+                        ),
+                        duration: const Duration(seconds: 2),
+                        backgroundColor: MarineColors.deepNavy,
+                      ),
+                    );
+                  }
+                },
               ),
             ),
           ],

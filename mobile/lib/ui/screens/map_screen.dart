@@ -106,6 +106,10 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
     final boatPoint = LatLng(provider.boatLat, provider.boatLon);
     final pfzs = provider.pfzs;
 
+    final activePFZ = provider.activeWaypoint ??
+        (pfzs.isNotEmpty && _selectedPFZIndex < pfzs.length ? pfzs[_selectedPFZIndex] : null);
+    final targetPoint = activePFZ != null ? LatLng(activePFZ.latitude, activePFZ.longitude) : null;
+
     final markers = <Marker>[
       // 1. Boat Current GPS Location Marker with Pulse Radar Ring
       Marker(
@@ -224,6 +228,18 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
               initialZoom: 8.5,
               minZoom: 5.5,
               maxZoom: 16.0,
+              onLongPress: (tapPosition, point) {
+                provider.setBoatLocation(point.latitude, point.longitude);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      '${provider.tr('set_boat_location')}: ${point.latitude.toStringAsFixed(3)}°N, ${point.longitude.toStringAsFixed(3)}°E',
+                    ),
+                    duration: const Duration(seconds: 2),
+                    backgroundColor: MarineColors.deepNavy,
+                  ),
+                );
+              },
             ),
             children: [
               TileLayer(
@@ -232,6 +248,21 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
                 maxNativeZoom: 18,
                 tileProvider: NetworkTileProvider(),
               ),
+              if (targetPoint != null)
+                PolylineLayer(
+                  polylines: [
+                    Polyline(
+                      points: [boatPoint, targetPoint],
+                      color: MarineColors.cyanAccent,
+                      strokeWidth: 3.5,
+                    ),
+                    Polyline(
+                      points: [boatPoint, targetPoint],
+                      color: Colors.white,
+                      strokeWidth: 1.5,
+                    ),
+                  ],
+                ),
               MarkerLayer(markers: markers),
             ],
           ),
@@ -243,6 +274,15 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
             right: 12,
             child: _buildTopTelemetryHUD(context, provider),
           ),
+
+          // Active Waypoint Course Banner
+          if (provider.activeWaypoint != null)
+            Positioned(
+              top: 66,
+              left: 12,
+              right: 12,
+              child: _buildActiveCourseHUD(context, provider.activeWaypoint!, provider),
+            ),
 
           // 2. Right Vertical Map Control Toolbar
           Positioned(
@@ -353,12 +393,26 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
                   ],
                 ),
                 const SizedBox(height: 2),
-                Text(
-                  'Mirissa Port • Departure Zone',
-                  style: TextStyle(
-                    fontSize: 10.5,
-                    color: Colors.white.withValues(alpha: 0.7),
-                    fontWeight: FontWeight.w500,
+                InkWell(
+                  onTap: () => _showHarborSelectorDialog(context, provider),
+                  borderRadius: BorderRadius.circular(4),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Flexible(
+                        child: Text(
+                          '${provider.departureHarborName} • ${provider.tr('departure_harbor')}',
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 10.5,
+                            color: MarineColors.cyanAccent,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      const Icon(Icons.edit_location_alt_rounded, size: 12, color: MarineColors.cyanAccent),
+                    ],
                   ),
                 ),
               ],
@@ -790,8 +844,179 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
                   ],
                 ),
               ),
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: provider.activeWaypoint == pfz
+                        ? MarineColors.coralRed
+                        : MarineColors.deepNavy,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                  icon: Icon(
+                    provider.activeWaypoint == pfz
+                        ? Icons.close_rounded
+                        : Icons.alt_route_rounded,
+                    color: MarineColors.safetyYellow,
+                  ),
+                  label: Text(
+                    provider.activeWaypoint == pfz
+                        ? provider.tr('clear_waypoint')
+                        : provider.tr('set_waypoint'),
+                    style: const TextStyle(fontWeight: FontWeight.w800),
+                  ),
+                  onPressed: () {
+                    final targetIdx = provider.pfzs.indexOf(pfz);
+                    if (provider.activeWaypoint == pfz) {
+                      provider.setActiveWaypoint(null);
+                    } else {
+                      provider.setActiveWaypoint(targetIdx);
+                    }
+                    Navigator.of(ctx).pop();
+                  },
+                ),
+              ),
             ],
           ),
+        );
+      },
+    );
+  }
+
+  Widget _buildActiveCourseHUD(
+    BuildContext context,
+    PFZModel pfz,
+    MarineProvider provider,
+  ) {
+    final distanceNM = GeoMath.distanceInNauticalMiles(
+      provider.boatLat,
+      provider.boatLon,
+      pfz.latitude,
+      pfz.longitude,
+    );
+    final bearingDeg = GeoMath.calculateBearing(
+      provider.boatLat,
+      provider.boatLon,
+      pfz.latitude,
+      pfz.longitude,
+    );
+    final cardinal = GeoMath.cardinalDirection(bearingDeg);
+    final idx = provider.pfzs.indexOf(pfz) + 1;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: MarineColors.cyanAccent,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: const [
+          BoxShadow(
+            color: Colors.black26,
+            blurRadius: 8,
+            offset: Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.navigation_rounded, size: 16, color: MarineColors.deepNavy),
+          const SizedBox(width: 6),
+          Expanded(
+            child: Text(
+              '${provider.tr('active_course')}: Zone #$idx • ${distanceNM.toStringAsFixed(1)} NM @ ${bearingDeg.toStringAsFixed(0)}° $cardinal',
+              style: const TextStyle(
+                fontSize: 11.5,
+                fontWeight: FontWeight.w900,
+                color: MarineColors.deepNavy,
+              ),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          IconButton(
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(minWidth: 24, minHeight: 24),
+            icon: const Icon(Icons.cancel_rounded, size: 18, color: MarineColors.deepNavy),
+            tooltip: provider.tr('clear_waypoint'),
+            onPressed: () => provider.setActiveWaypoint(null),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showHarborSelectorDialog(BuildContext context, MarineProvider provider) {
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        return AlertDialog(
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: Row(
+            children: [
+              const Icon(Icons.anchor_rounded, color: MarineColors.oceanNavy),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  provider.tr('select_harbor'),
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w900,
+                    color: MarineColors.deepNavy,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: ListView.separated(
+              shrinkWrap: true,
+              itemCount: MarineConfig.sriLankanHarbors.length,
+              separatorBuilder: (_, __) => const Divider(height: 1),
+              itemBuilder: (c, i) {
+                final h = MarineConfig.sriLankanHarbors[i];
+                final isSelected = h.name == provider.departureHarborName;
+                final localizedName = h.getLocalizedName(provider.selectedLanguage);
+                return ListTile(
+                  dense: true,
+                  selected: isSelected,
+                  selectedTileColor: MarineColors.primaryBlue.withValues(alpha: 0.1),
+                  leading: Icon(
+                    Icons.location_city_rounded,
+                    color: isSelected ? MarineColors.primaryBlue : Colors.grey,
+                  ),
+                  title: Text(
+                    localizedName,
+                    style: TextStyle(
+                      fontWeight: isSelected ? FontWeight.w900 : FontWeight.w600,
+                      color: isSelected ? MarineColors.primaryBlue : Colors.black87,
+                    ),
+                  ),
+                  subtitle: Text(
+                    '${h.region} • ${h.latitude.toStringAsFixed(2)}°N, ${h.longitude.toStringAsFixed(2)}°E',
+                    style: const TextStyle(fontSize: 11),
+                  ),
+                  trailing: isSelected
+                      ? const Icon(Icons.check_circle_rounded, color: MarineColors.primaryBlue)
+                      : null,
+                  onTap: () {
+                    provider.setDepartureHarbor(h);
+                    Navigator.of(ctx).pop();
+                    _animatedMove(LatLng(h.latitude, h.longitude), 9.0);
+                  },
+                );
+              },
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: Text(provider.tr('cancel')),
+            ),
+          ],
         );
       },
     );

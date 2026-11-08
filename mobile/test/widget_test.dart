@@ -182,5 +182,36 @@ void main() {
     expect(alert.getLocalizedMessage('ta'), contains('எச்சரிக்கை'));
     expect(alert.getLocalizedMessage('en'), contains('WARNING'));
   });
+
+  test('HarbourLocation catalog and MarineProvider harbor/vessel operations', () async {
+    expect(MarineConfig.sriLankanHarbors.length, greaterThanOrEqualTo(8));
+    final mirissa = MarineConfig.sriLankanHarbors.firstWhere((h) => h.name.contains('Mirissa'));
+    expect(mirissa.latitude, closeTo(5.9482, 0.001));
+    expect(mirissa.longitude, closeTo(80.4578, 0.001));
+    expect(mirissa.getLocalizedName('si'), contains('මිරිස්ස'));
+    expect(mirissa.getLocalizedName('ta'), contains('மிரிஸ்ஸ'));
+
+    final mockSync = MockOfflineSyncService();
+    final provider = MarineProvider(syncService: mockSync);
+    await provider.syncData();
+
+    final beruwala = MarineConfig.sriLankanHarbors.firstWhere((h) => h.name.contains('Beruwala'));
+    await provider.setDepartureHarbor(beruwala);
+    expect(provider.departureHarborName, equals(beruwala.name));
+    expect(provider.boatLat, equals(beruwala.latitude));
+    expect(provider.boatLon, equals(beruwala.longitude));
+
+    await provider.setVesselRegistration('IMUL-A-0982-KLT');
+    expect(provider.vesselRegistration, equals('IMUL-A-0982-KLT'));
+
+    provider.setActiveWaypoint(0);
+    expect(provider.activeWaypointIndex, equals(0));
+    expect(provider.activeWaypoint, isNotNull);
+    expect(provider.activeWaypoint!.id, equals('test-pfz-01'));
+
+    provider.setActiveWaypoint(null);
+    expect(provider.activeWaypointIndex, isNull);
+    expect(provider.activeWaypoint, isNull);
+  });
 }
 
